@@ -1,5 +1,7 @@
 import Queue from "./queue.js";
 
+const maxCap=100; // Maximum number of times respawn loop will work for random generation before trying to break the deadlock
+
 /*
 Point class:
 Data members:
@@ -29,15 +31,46 @@ respawn() -> generates new coordinate of food if foodCollision() returns true
 foodCollision() -> checks if new head position=current cocolumn of food
  */
 class Food {
-    constructor() {
-        this.currFoodCell=new Point(0,0);
+    constructor(x,y) {
+        this.currFoodCell=new Point(x,y);
     }
 
-    respawn() {
-
+    respawn(percentFilled,totRow,totCol,bodySet) {
+        // If board is 90% full by snake body, random guess might create deadlock, so using different logic for different phases
+        if(percentFilled<=0.9) {
+            let count=0;
+            while(true) {
+                if(++count>maxCap) {
+                    // Might be some deadlock, so switching to the other logic design for respawn()
+                    return this.respawn(1,totRow,totCol,bodySet);
+                }
+                let x=this.#randomNumberGenerator(0,totRow);
+                let y=this.#randomNumberGenerator(0,totCol);
+                if(bodySet.has(x+","+y)) {
+                    continue;
+                }
+                this.currFoodCell=new Point(x,y);
+                return;
+            }
+        } else {
+            let tempList=[];
+            for(let i=0;i<totRow;i++) {
+                for(let j=0;j<totCol;j++) {
+                    if(bodySet.has(i+","+j))
+                        continue;
+                    tempList.push(new Point(i,j));
+                }
+            }
+            let tempPoint=tempList[this.#randomNumberGenerator(0,tempList.length)];
+            this.currFoodCell=new Point(tempPoint.row,tempPoint.column);
+            return;
+        }
     }
     foodCollision(nextHead) {
         return this.currFoodCell.equals(nextHead);
+    }
+    #randomNumberGenerator(min,max) {
+        return Math.floor(Math.random()*(max-min)+min);
     }
 }
 
@@ -162,7 +195,7 @@ class Game {
         this.totalColumns=c;
         this.score=0;
         this.snakeObj=new Snake();
-        this.foodObj=new Food();
+        this.foodObj=new Food(0,0);
     }
 
     wallCollision(nextHead) {
@@ -173,7 +206,10 @@ class Game {
         if(this.wallCollision(nextHead) || this.snakeObj.selfCollision(nextHead)) {
             return 0;
         } else if(this.foodObj.foodCollision(nextHead)) {
+            this.score++;
             this.snakeObj.move(nextHead,1);
+            let percentFilled=(this.snakeObj.bodyQueue.size())/(this.totalRows*this.totalColumns)*100;
+            this.foodObj.respawn(percentFilled,this.totalRows,this.totalColumns,this.snakeObj.bodySet);
         } else {
             // If no collision occurs
             this.snakeObj.move(nextHead,0);

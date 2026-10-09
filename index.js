@@ -1,6 +1,11 @@
 import Queue from "./queue.js";
+import DomManipulator from "./DomManipulator.js";
 
 const maxCap=100; // Maximum number of times respawn loop will work for random generation before trying to break the deadlock
+
+function randomNumberGenerator(min,max) {
+        return Math.floor(Math.random()*(max-min)+min);
+}
 
 /*
 Point class:
@@ -31,8 +36,8 @@ respawn() -> generates new coordinate of food if foodCollision() returns true
 foodCollision() -> checks if new head position=current cocolumn of food
  */
 class Food {
-    constructor(x,y) {
-        this.currFoodCell=new Point(x,y);
+    constructor() {
+        this.currFoodCell=new Point(0,0);
     }
 
     respawn(percentFilled,totRow,totCol,bodySet) {
@@ -44,8 +49,8 @@ class Food {
                     // Might be some deadlock, so switching to the other logic design for respawn()
                     return this.respawn(1,totRow,totCol,bodySet);
                 }
-                let x=this.#randomNumberGenerator(0,totRow);
-                let y=this.#randomNumberGenerator(0,totCol);
+                let x=randomNumberGenerator(0,totCol);
+                let y=randomNumberGenerator(0,totRow);
                 if(bodySet.has(x+","+y)) {
                     continue;
                 }
@@ -61,16 +66,13 @@ class Food {
                     tempList.push(new Point(i,j));
                 }
             }
-            let tempPoint=tempList[this.#randomNumberGenerator(0,tempList.length)];
+            let tempPoint=tempList[randomNumberGenerator(0,tempList.length)];
             this.currFoodCell=new Point(tempPoint.row,tempPoint.column);
             return;
         }
     }
     foodCollision(nextHead) {
         return this.currFoodCell.equals(nextHead);
-    }
-    #randomNumberGenerator(min,max) {
-        return Math.floor(Math.random()*(max-min)+min);
     }
 }
 
@@ -276,27 +278,53 @@ class Game {
     }
 
     initializeGame() {
-        this.snakeObj.dir='right';
-        this.snakeObj.add(new Point(4,4));
+        // Setting up random starting position and direction for snake
+        let tempX=randomNumberGenerator(0,this.totalColumns);
+        let tempY=randomNumberGenerator(0,this.totalRows);
+        this.snakeObj.add(new Point(tempX,tempY));
+        this.snakeObj.dir=this.initialDirection();
+
+        // constructor of Food sets initial position at (0,0). Calling respawn here once to make it random
+        this.foodObj.respawn(0,this.totalRows,this.totalColumns,this.snakeObj.bodySet);
+        
+    }
+
+    initialDirection() {
+        let tempList=['up','down','left','right'];
+        let initialSnakeBody=this.snakeObj.bodyQueue.peek();
+        if(initialSnakeBody.row==0)
+            tempList=tempList.filter(item => item != 'up');
+        if(initialSnakeBody.row=this.totalRows-1)
+            tempList=tempList.filter(item => item != 'down');
+        if(initialSnakeBody.column==0)
+            tempList=tempList.filter(item => item != 'left');
+        if(initialSnakeBody.column=this.totalColumns-1)
+            tempList=tempList.filter(item => item != 'right');
+        let randomNumber=randomNumberGenerator(0,tempList.length);
+        return tempList[randomNumber];
     }
 
     gameWon() {
+        console.log("Game won. Score: ",this.score);
         return 1;
     }
 
     gameOver() {
+        console.log("Game over. Score: ", this.score);
         return 0;
     }
 }
 
 
 // Main part under execution
+console.log("Game has started.");
 const gameObj=new Game(20,20);
 gameObj.initializeGame();
 const loopId=setInterval(() => {
     if(gameObj.gameLoop()!=2)
-        clearInterval(loopId);
+        clearInterval(loopId); // Stops the periodic gameLoop once either game win or game lost
 }, 500);
 document.addEventListener("keydown", (event) => {
     gameObj.inputHandler(event.key);
 });
+

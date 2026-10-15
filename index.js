@@ -1,7 +1,11 @@
 import Queue from "./queue.js";
 import DomManipulator from "./DomManipulator.js";
 
+// This part contains those variable which are to be considered constant at the time of gameplay
 const maxCap=100; // Maximum number of times respawn loop will work for random generation before trying to break the deadlock
+let bestScore=0; // Initial best score as the game starts
+const cellHeight=20;
+const cellWidth=20;
 
 function randomNumberGenerator(min,max) {
         return Math.floor(Math.random()*(max-min)+min);
@@ -201,7 +205,7 @@ class Game {
     }
 
     wallCollision(nextHead) {
-        return nextHead.row>this.totalRows || nextHead.column>this.totalColumns || nextHead.row<0 || nextHead.column<0;
+        return nextHead.row>=this.totalRows || nextHead.column>=this.totalColumns || nextHead.row<0 || nextHead.column<0;
     }
 
     checkCollision(nextHead) {
@@ -209,6 +213,7 @@ class Game {
             return 0;
         } else if(this.foodObj.foodCollision(nextHead)) {
             this.score++;
+            DomManipulator.updateCurrentScore(this.score);
             this.snakeObj.move(nextHead,1);
             let percentFilled=(this.snakeObj.bodyQueue.size())/(this.totalRows*this.totalColumns)*100;
             this.foodObj.respawn(percentFilled,this.totalRows,this.totalColumns,this.snakeObj.bodySet);
@@ -245,10 +250,13 @@ class Game {
     }
 
     render(foodPoint,bodyQueue) {
-        const cellHeight=20;
-        const cellWidth=20;
-
         let x,y,radius=cellWidth/2 - 2,p; // Temporary variables
+
+        // Importing the variable of color from CSS file
+        const styles = getComputedStyle(document.documentElement);
+        const snakeBodyColor = styles.getPropertyValue('--snake-body-color').trim();
+        const snakeHeadColor = styles.getPropertyValue('--snake-head-color').trim();
+        const foodColor = styles.getPropertyValue('--food-color').trim();
 
         // Creating canvas context
         const canvas=document.getElementById("canvas");
@@ -257,23 +265,30 @@ class Game {
         // Clearing the frame every time and redrawing every pixel
         context.clearRect(0,0,canvas.width,canvas.height);
 
+        // Creating box to understand the canvas extent
+        context.strokeRect(0,0,this.totalColumns*cellWidth,this.totalRows*cellHeight);
+
         // Drawing the food
         x=(foodPoint.column*cellHeight + cellHeight/2 );
         y=(foodPoint.row*cellWidth + cellWidth/2 );
         context.beginPath();
         // arc(x, y, radius, startAngle, endAngle, counterclockwise)
         context.arc(x,y,radius,0,Math.PI*2,false);
-        context.fillStyle='yellow';
+        context.fillStyle=foodColor;
         context.fill();
 
         // Drawing the snake
         while(!bodyQueue.isEmpty()) {
+            let fillColor;
+            if(bodyQueue.size()==1)
+                fillColor=snakeHeadColor;
+            else
+                fillColor=snakeBodyColor;
             p=bodyQueue.dequeue();
             x=p.column*cellHeight;
             y=p.row*cellWidth;
-            // fillRect(x, y, width, height)
-            context.fillStyle='black';
-            context.fillRect(x+1,y+1,cellWidth-1,cellHeight-1);
+            context.fillStyle=fillColor;
+            context.fillRect(x+1,y+1,cellWidth-1,cellHeight-1); // fillRect(x, y, width, height)
         }
     }
 
@@ -286,6 +301,11 @@ class Game {
 
         // constructor of Food sets initial position at (0,0). Calling respawn here once to make it random
         this.foodObj.respawn(0,this.totalRows,this.totalColumns,this.snakeObj.bodySet);
+
+        // UI initialization
+        DomManipulator.updateCurrentScore(this.score); // this.score=>0 at this point
+        DomManipulator.updateBestScore(bestScore); // bestScore=>0 at this point
+        DomManipulator.updateCanvasDimensions(this.totalColumns*cellWidth,this.totalRows*cellHeight);
         
     }
 
@@ -294,11 +314,11 @@ class Game {
         let initialSnakeBody=this.snakeObj.bodyQueue.peek();
         if(initialSnakeBody.row==0)
             tempList=tempList.filter(item => item != 'up');
-        if(initialSnakeBody.row=this.totalRows-1)
+        if(initialSnakeBody.row==this.totalRows-1)
             tempList=tempList.filter(item => item != 'down');
         if(initialSnakeBody.column==0)
             tempList=tempList.filter(item => item != 'left');
-        if(initialSnakeBody.column=this.totalColumns-1)
+        if(initialSnakeBody.column==this.totalColumns-1)
             tempList=tempList.filter(item => item != 'right');
         let randomNumber=randomNumberGenerator(0,tempList.length);
         return tempList[randomNumber];
@@ -306,11 +326,14 @@ class Game {
 
     gameWon() {
         console.log("Game won. Score: ",this.score);
+        bestScore=this.score>bestScore?this.score:bestScore;
+        DomManipulator.showGameWonCard();
         return 1;
     }
 
     gameOver() {
         console.log("Game over. Score: ", this.score);
+        DomManipulator.showGameLostCard();
         return 0;
     }
 }

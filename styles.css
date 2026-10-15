@@ -1,3 +1,12 @@
+:root {
+    --snake-body-color: #22c55e;
+    --snake-head-color: #a9e1bd;
+    --food-color: #f43f5e;
+    --background-color: #0f172a;
+    --text-color-1: #e2e8f0;
+    --text-color-2: #94a3b8;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -8,14 +17,44 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 20px;
+    background-color: var(--background-color);
 }
 
-#canvas {
+#header {
+    display: flex;
+    justify-content: center;
+    color: var(--text-color-1);
+}
+
+#score-container {
+    width: 40vw;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-color-2);
+}
+
+#canvas-container {
     display: block;
-    width: min(90vw, 800px);
-    height: auto;
-    aspect-ratio: 3 / 2;
-    border: 2px solid black;
     box-sizing: border-box;
     margin: 0 auto;
+    border: 2px solid black;
+    position: relative;
+    height: fit-content;
+    width: fit-content;
 }
+
+#game-won-div,#game-lost-div {
+    display: none;
+}
+
+.show-outcome {
+    position: absolute;
+    top: 45%;
+    left: 45%;
+}
+
+#footer {
+    display: flex;
+    justify-content: right;
+}
+

@@ -225,13 +225,14 @@ class Game {
     }
 
     inputHandler(keyPressed) {
-        if(keyPressed=='ArrowUp' || keyPressed=='KeyW')
+        console.log(keyPressed);
+        if(keyPressed=='ArrowUp' || keyPressed=='w')
             this.snakeObj.setDirection('up');
-        else if(keyPressed=='ArrowDown' || keyPressed=='KeyS')
+        else if(keyPressed=='ArrowDown' || keyPressed=='s')
             this.snakeObj.setDirection('down');
-        else if(keyPressed=='ArrowLeft' || keyPressed=='KeyA')
+        else if(keyPressed=='ArrowLeft' || keyPressed=='a')
             this.snakeObj.setDirection('left');
-        else if(keyPressed=='ArrowRight' || keyPressed=='KeyD')
+        else if(keyPressed=='ArrowRight' || keyPressed=='d')
             this.snakeObj.setDirection('right');
     }
 
@@ -257,6 +258,7 @@ class Game {
         const snakeBodyColor = styles.getPropertyValue('--snake-body-color').trim();
         const snakeHeadColor = styles.getPropertyValue('--snake-head-color').trim();
         const foodColor = styles.getPropertyValue('--food-color').trim();
+        const wallColor=styles.getPropertyValue('--wall-color').trim();
 
         // Creating canvas context
         const canvas=document.getElementById("canvas");
@@ -266,6 +268,7 @@ class Game {
         context.clearRect(0,0,canvas.width,canvas.height);
 
         // Creating box to understand the canvas extent
+        context.strokeStyle=wallColor;
         context.strokeRect(0,0,this.totalColumns*cellWidth,this.totalRows*cellHeight);
 
         // Drawing the food

@@ -201,7 +201,7 @@ class Game {
         this.totalColumns=c;
         this.score=0;
         this.snakeObj=new Snake();
-        this.foodObj=new Food(0,0);
+        this.foodObj=new Food();
     }
 
     wallCollision(nextHead) {
@@ -330,27 +330,42 @@ class Game {
     gameWon() {
         console.log("Game won. Score: ",this.score);
         bestScore=this.score>bestScore?this.score:bestScore;
-        DomManipulator.showGameWonCard();
+        DomManipulator.showGameWonCard(); // Returns 0 if user clicks on restart button
         return 1;
     }
 
     gameOver() {
         console.log("Game over. Score: ", this.score);
-        DomManipulator.showGameLostCard();
+        bestScore=this.score>bestScore?this.score:bestScore;
+        DomManipulator.showGameLostCard(); // Returns 0 if user clicks on restart button
         return 0;
     }
 }
 
+const startGame=function() {
+    const gameObj=new Game(20,20);
+    gameObj.initializeGame();
+    const loopId=setInterval(() => {
+        if(gameObj.gameLoop()!=2) {
+            clearInterval(loopId); // Stops the periodic gameLoop once either game win or game lost
+            restartGame();
+        }
+    }, 150);
+    document.addEventListener("keydown", (event) => {
+        gameObj.inputHandler(event.key);
+    });
+};
+
+const restartGame=async function() {
+    let res=await DomManipulator.allowRestart();
+    if(res==0) {
+        startGame();
+    }
+};
+
 
 // Main part under execution
 console.log("Game has started.");
-const gameObj=new Game(20,20);
-gameObj.initializeGame();
-const loopId=setInterval(() => {
-    if(gameObj.gameLoop()!=2)
-        clearInterval(loopId); // Stops the periodic gameLoop once either game win or game lost
-}, 500);
-document.addEventListener("keydown", (event) => {
-    gameObj.inputHandler(event.key);
-});
+startGame();
+
 
